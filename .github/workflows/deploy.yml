@@ -1,0 +1,38 @@
+name: Deploy to Hostinger
+on:
+  push:
+    branches:
+      - master-deploy-v2
+jobs:
+  build_and_deploy:
+    runs-on: ubuntu-latest
+    steps:
+      # 1️⃣ Checkout code
+      - name: Checkout code
+        uses: actions/checkout@v3
+      # 2️⃣ Set up Node.js
+      - name: Set up Node.js
+        uses: actions/setup-node@v3
+        with:
+          node-version: '18'
+      # 3️⃣ Install dependencies
+      - name: Install dependencies
+        run: npm install
+      # 4️⃣ Inject Supabase env vars and build
+      - name: Build project
+        run: |
+          echo "VITE_SUPABASE_URL=${{ secrets.VITE_SUPABASE_URL }}" >> .env
+          echo "VITE_SUPABASE_ANON_KEY=${{ secrets.VITE_SUPABASE_ANON_KEY }}" >> .env
+          npm run build
+      # 5️⃣ Deploy built files via SFTP
+      - name: Deploy via SFTP
+        uses: appleboy/scp-action@v0.1.7
+        with:
+          host: ${{ secrets.HOSTINGER_FTP_HOST }}
+          username: ${{ secrets.HOSTINGER_FTP_USER }}
+          password: ${{ secrets.HOSTINGER_FTP_PASS }}
+          port: 65002
+          source: "dist/."
+          target: "/home/u569020173/domains/hhtechhub.com/public_html"
+          strip_components: 1
+          rm: true
